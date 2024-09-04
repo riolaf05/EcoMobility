@@ -43,3 +43,6 @@ gcloud run services delete $APP --region $REGION
 gcloud run services list
 ```
 
+# Grafana dashboard deploy 
+
+See ['Geomap grafana dashboard'](https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/geomap/)
