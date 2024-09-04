@@ -1,10 +1,10 @@
-# Symptom app
+# EcoMobility app
 
 1. Create exports
 
 ```console
 export PROJECT_ID=progetti-poc
-export APP=symptom-app 
+export APP=eco-mobility-app 
 export PORT=8501
 export REGION=europe-west8
 export BRANCH=master

@@ -1,4 +1,10 @@
 import streamlit as st
+import boto3
+import os
+from dotenv import load_dotenv
+from PIL import Image
+from io import BytesIO
+from geopy.geocoders import Nominatim
 import json
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -11,16 +17,14 @@ from langchain.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from typing import List
 
-class Symptom(BaseModel):
+class Report(BaseModel):
     """Patient symptom described during a doctor's call."""
 
-    names: List[str] = Field(description="List of symptoms described by the patient")
-    description: str = Field(description="Detailed description of the symptoms and any associated information")
-    duration: str = Field(description="Duration for which the symptom has been present (e.g., '2 days', '1 week')")
-    severity: str = Field(description="Severity of the symptom (e.g., 'mild', 'moderate', 'severe')")
-    notes: str = Field(description="Any additional notes or relevant information provided by the patient or observed by the doctor")
+    description: str = Field(description="Detailed description of the ecological problem report")
+    severity: str = Field(description="Severity (from 0 to 10) of the ecological problem, e.g. severity 9 or 10 in case of big open-air dump")
+   
 
-model = ChatOpenAI(temperature=0).bind_tools([Symptom])
+model = ChatOpenAI(temperature=0).bind_tools([Report])
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", """
@@ -36,8 +40,16 @@ prompt = ChatPromptTemplate.from_messages(
 parser = JsonOutputToolsParser()
 chain = prompt | model | parser
 
+def get_lat_long(address):
+    geolocator = Nominatim(user_agent="geoapiExercises")
+    location = geolocator.geocode(address)
+    if location:
+        return location.latitude, location.longitude
+    else:
+        return None, None
+
 # Function that processes the input and returns the JSON structure
-def process_symptoms(input_text):
+def process_report(input_text):
     try:
         response = chain.invoke({"input": input_text})
         return response
@@ -47,15 +59,18 @@ def process_symptoms(input_text):
 
 # Streamlit app
 def main():
-    st.title("Patient Symptom Extractor")
+    st.title("Segnalazione Danni Ecologici in Città")
 
-    # Input field for the patient message
-    input_text = st.text_area("Enter the patient's description of symptoms:")
+    # Campo per l'indirizzo
+    address = st.text_input("Inserisci l'indirizzo del danno ecologico:")
+
+    # Campo per il caricamento della foto
+    uploaded_file = st.file_uploader("Carica una foto del danno", type=["jpg", "jpeg", "png"])
 
     if st.button("Process Symptoms"):
         if input_text.strip():
             # Process the input through the function
-            symptoms_json = process_symptoms(input_text)
+            symptoms_json = process_report(input_text)
 
             # Check if the response is valid
             if symptoms_json is not None:
